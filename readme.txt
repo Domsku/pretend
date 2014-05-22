@@ -4,12 +4,12 @@
 
     var myService = pretend('myService');
 
-    myService.returns('someValue').for.method('myFunction');
-    myService.returns('someValue').for.property('myFunction');
-    myService.returns('someValue').for.promise('myFunction');
+    myService.returns('someValue').for.method('myMethod');
+    myService.returns('someValue').for.property('myProperty');
+    myService.returns('someValue').for.promise('myPromise');
     myService.returns(function(){
-    return 'someValue';
-    }).for.method('myFunction');
+        return 'someValue';
+    }).for.method('myOtherMethod');
 
     // Inject the mock as follows
     $provide.value('myService', myService.instance);
