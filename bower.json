@@ -1,8 +1,33 @@
 {
-    "name": "pretend",
-    "version": "0.0.1",
-    "dependencies": {
-        "angular": "1.2.13",
-        "angular-mocks": "1.2.13"
-    }
+  "name": "Pretend",
+  "version": "0.0.1",
+  "dependencies": {
+    "angular": "1.2.13",
+    "angular-mocks": "1.2.13"
+  },
+  "homepage": "https://github.com/basslagter/pretend",
+  "authors": [
+    "Bas Slagter"
+  ],
+  "description": "Small and simple mocking 'framework' to make it easier to mock items when writing unit tests for an Angular app.",
+  "main": "./dist/pretend.js",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "unit",
+    "testing",
+    "jasmine",
+    "angular",
+    "mocking",
+    "mock"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
 }
