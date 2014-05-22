@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('pretend', []);
-    angular.module('pretend').factory('Pretend', function ($rootScope, $q) {
+    angular.module('pretend').factory('Pretend', ['$rootScope', '$q', function($rootScope, $q) {
 
         return {
             get: function(){
@@ -68,7 +68,7 @@
                 };
             }
         }
-    });
+    }]);
 
     angular.module('pretend').run(function(Pretend){
         window.pretend = Pretend.get();
