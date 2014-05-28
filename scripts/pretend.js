@@ -1,17 +1,32 @@
 (function () {
     'use strict';
 
-    angular.module('pretend', []);
-    angular.module('pretend').factory('Pretend', ['$rootScope', '$q', function($rootScope, $q) {
-
-        return {
-            get: function(){
-                 return function Pretend(instanceName) {
+    function createModule(){
+        angular.module('pretend').factory('Pretend', ['$rootScope', '$q', function($rootScope, $q, $provider) {
+            return {
+                getMock: function(name){
                     var instance = {},
-                        deferredFunctions = {};
+                        spies = {},
+                        deferredFunctions = {},
+                        realInstance = angular.injector(['pretend']).get(name);
+
+
+                    var keys = Object.keys(realInstance);
+
+                    angular.forEach(keys, function(key){
+                        setProperty(key, undefined, { type: (function(){
+                            var prop =  realInstance[key],
+                                isMethod = ('function' === typeof prop);
+
+                            if(isMethod){
+                                return (prop.toString().indexOf('.promise') === -1) ? 'method' : 'promise';
+                            }
+
+                            return 'property'
+                        }())});
+                    })
 
                     function setProperty(property, value, options){
-
 
                         if(options.type === 'property'){
                             instance[property] = value;
@@ -19,7 +34,7 @@
                             instance[property] = null;
                             // Wrap the returning value with a callback function for the Jasmine.callFake call
                             // This way we can pass on the actual function arguments to the callback function if the user specified one.
-                            spyOn(instance, property).and.callFake(function () {
+                            spies[property] = spyOn(instance, property).and.callFake(function () {
                                 var args = arguments;
 
                                 if (options.type === 'promise') {
@@ -37,6 +52,7 @@
                             });
                         }
                     }
+
 
                     return {
                         returns: function (value) {
@@ -63,15 +79,34 @@
                                 }
                             };
                         },
-                        instance: instance
-                    }
-                };
+                        instance: instance,
+                        spies: spies
+                    };
+                }
+            };
+        }]);
+    }
+
+    function Pretend(){
+        var pretend = null;
+
+        return {
+            init: function(name){
+                angular.module('pretend', [name]);
+
+                createModule();
+
+                angular.module('pretend').run(function(Pretend){
+                    pretend = Pretend;
+                });
+
+                angular.bootstrap(document.createElement('div'), ['pretend']);
+            },
+            mock: function(name){
+                return pretend.getMock(name);
             }
         }
-    }]);
+    }
 
-    angular.module('pretend').run(function(Pretend){
-        window.pretend = Pretend.get();
-    });
-    angular.bootstrap(document.createElement('div'), ['pretend']);
+    window.pretend = new Pretend();
 }());
