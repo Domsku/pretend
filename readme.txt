@@ -1,16 +1,26 @@
 
- 1. Add 'pretend' as a module dependency to the Angular module you want to test
+ 1. Call pretend.init with the name of the module you want to test.
  2. use the global 'pretend' object to mock services etc. Like:
 
-    var myService = pretend('myService');
+    // Initialize pretend (do this once when booting your tests).
+    pretend.init('myApp');
 
-    myService.returns('someValue').for.method('myMethod');
-    myService.returns('someValue').for.property('myProperty');
-    myService.returns('someValue').for.promise('myPromise');
-    myService.returns(function(){
-        return 'someValue';
-    }).for.method('myOtherMethod');
+    // Mock the service/factory that needs to be injected.
+    var myService = pretend.mock('myService');
 
     // Inject the mock as follows
-    $provide.value('myService', myService.instance);
+    $provide.value('myService', myService.mock);
 
+    // Setup custom (test specific) return values, like:
+
+        // Basic
+        myService.returns('someValue').for('myMethod');
+
+        // With callback
+        myService.returns(function(){
+            return 'someValue';
+        }).for('myOtherMethod');
+
+        // Promise
+        var promise = myService.returns('someValue').for('myMethod');
+        promise.resolve(); // pass on your injected rootScope to trigger the digest loop.

@@ -1,86 +1,108 @@
 (function () {
     'use strict';
 
+    var DEFAULT_RETURN_VALUE = undefined;
+
     function createModule(){
-        angular.module('pretend').factory('Pretend', ['$rootScope', '$q', function($rootScope, $q, $provider) {
-            return {
-                getMock: function(name){
-                    var instance = {},
-                        spies = {},
-                        deferredFunctions = {},
-                        realInstance = angular.injector(['pretend']).get(name);
 
+        angular.module('pretend').factory('Pretend', ['$rootScope', '$q', '$injector', function($rootScope, $q, $injector) {
+            var mock = {},
+                properties = {};
 
-                    var keys = Object.keys(realInstance);
+            function initializeMock(objectName){
+                var instance = $injector.get(objectName),
+                    props = Object.keys(instance);
 
-                    angular.forEach(keys, function(key){
-                        setProperty(key, undefined, { type: (function(){
-                            var prop =  realInstance[key],
-                                isMethod = ('function' === typeof prop);
+                angular.forEach(props, function(prop){
+                    var type = getPropertyType(instance, prop);
+                    setProperty(prop, type, DEFAULT_RETURN_VALUE);
+                });
+            }
 
-                            if(isMethod){
-                                return (prop.toString().indexOf('.promise') === -1) ? 'method' : 'promise';
-                            }
+            function getPropertyType(instance, property) {
+                var prop = instance[property],
+                    isMethod = ('function' === typeof prop);
 
-                            return 'property'
-                        }())});
-                    })
+                if (isMethod) {
+                    return (prop.toString().indexOf('.promise') === -1) ? 'method' : 'promise';
+                }
 
-                    function setProperty(property, value, options){
+                return 'property';
+            }
 
-                        if(options.type === 'property'){
-                            instance[property] = value;
-                        }else{
-                            instance[property] = null;
-                            // Wrap the returning value with a callback function for the Jasmine.callFake call
-                            // This way we can pass on the actual function arguments to the callback function if the user specified one.
-                            spies[property] = spyOn(instance, property).and.callFake(function () {
-                                var args = arguments;
+            function setProperty(propertyName, type, value){
+                var property = properties[propertyName] = {
+                    name: propertyName,
+                    type: type,
+                    spy: undefined
+                };
 
-                                if (options.type === 'promise') {
-                                    var deferred = $q.defer();
+                setPropertyValue(property, value);
+            }
 
-                                    deferredFunctions[property] = function (reject) {
-                                        deferred[(reject) ? 'reject' : 'resolve']('function' === typeof value ? value.apply(value, args) : value);
-                                        $rootScope.$digest();
-                                    };
+            function setPropertyValue(property, value){
+                if(property.type === 'property'){
+                    mock[property.name] = value;
+                }else{
+                    mock[property.name] = null;
 
-                                    return deferred.promise;
-                                } else {
-                                    return ('function' === typeof value) ? value.apply(value, args) : value;
-                                }
-                            });
+                    // Wrap the returning value with a callback function for the Jasmine.callFake call
+                    // This way we can pass on the actual function arguments to the callback function if the user specified one.
+                    property.spy = spyOn(mock, property.name).and.callFake(function () {
+                        var args = arguments;
+
+                        if (property.type === 'promise') {
+                            var deferred = $q.defer();
+
+                            property.deferred = function (reject) {
+                                deferred[(reject) ? 'reject' : 'resolve']('function' === typeof value ? value.apply(value, args) : value);
+                                $rootScope.$digest();
+                            };
+
+                            return deferred.promise;
+                        } else {
+                            return ('function' === typeof value) ? value.apply(value, args) : value;
                         }
-                    }
+                    });
+                }
+            }
 
+            return {
+                getMock: function(objectName){
+                    if(!objectName) { throw new Error('The name of the object that needs to be mocked is required.'); }
+
+                    initializeMock(objectName);
 
                     return {
-                        returns: function (value) {
+                        mock: mock,
+                        returns: function (returnValue) {
                             return {
-                                for: {
-                                    property: function(name){
-                                        setProperty(name, value, { type: 'property' });
-                                    },
-                                    method: function(name){
-                                        setProperty(name, value, { type: 'method' });
-                                    },
-                                    promise: function(name){
-                                        setProperty(name, value, { type: 'promise' });
+                                for: function(propertyName){
+                                    if(!propertyName){ throw new Error('The name of the property to set a return value for is required.'); }
 
+                                    var property = properties[propertyName];
+                                    if(!property){ throw new Error('The property \'' + propertyName + '\' is not part of the object \'' + objectName + '\'.'); }
+
+                                    setPropertyValue(property, returnValue);
+
+                                    if(property.type === 'promise'){
                                         return {
-                                            resolve: function () {
-                                                deferredFunctions[name]();
+                                            resolve: function (scope) {
+                                                property.deferred();
+                                                if(scope) { scope.$digest(); }
                                             },
-                                            reject: function () {
-                                                deferredFunctions[name](true);
+                                            reject: function (scope) {
+                                                property.deferred(true);
+                                                if(scope) { scope.$digest(); }
                                             }
                                         }
                                     }
                                 }
                             };
                         },
-                        instance: instance,
-                        spies: spies
+                        spy: function(propertyName){
+                            return properties[propertyName].spy;
+                        }
                     };
                 }
             };
@@ -91,8 +113,10 @@
         var pretend = null;
 
         return {
-            init: function(name){
-                angular.module('pretend', [name]);
+            init: function(moduleName){
+                if(!moduleName){ throw new Error('A module name is required when initializing.'); }
+
+                angular.module('pretend', [moduleName, 'ngMock']);
 
                 createModule();
 
@@ -102,8 +126,9 @@
 
                 angular.bootstrap(document.createElement('div'), ['pretend']);
             },
-            mock: function(name){
-                return pretend.getMock(name);
+            mock: function(objectName){
+                if(!pretend){ throw new Error('Cannot create a mock prior to initialization.'); }
+                return pretend.getMock(objectName);
             }
         }
     }
