@@ -1,6 +1,6 @@
 {
     "name": "pretend",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "devDependencies": {
         "grunt": "~0.4.2",
         "grunt-karma": "~0.8.3",
