@@ -1,6 +1,6 @@
 {
   "name": "pretend",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "dependencies": {
     "angular": "1.2.13",
     "angular-mocks": "1.2.13"
