@@ -3,14 +3,22 @@
 
     var DEFAULT_RETURN_VALUE = undefined;
 
-    function createModule(){
+    function createModule(moduleName){
 
         angular.module('pretend').factory('Pretend', ['$rootScope', '$q', '$injector', function($rootScope, $q, $injector) {
             var mock = {},
                 properties = {};
 
+            function getInstance(objectName){
+                try{
+                    return $injector.get(objectName);
+                }catch(ex){
+                    throw new Error('Unknown provider \'' + objectName + '\' in module \'' + moduleName + '\'. Was everything loaded before calling init()?');
+                }
+            }
+
             function initializeMock(objectName){
-                var instance = $injector.get(objectName),
+                var instance = getInstance(objectName),
                     props = Object.keys(instance);
 
                 angular.forEach(props, function(prop){
@@ -112,13 +120,25 @@
     function Pretend(){
         var pretend = null;
 
+        function moduleExists(moduleName) {
+            try {
+                angular.module(moduleName);
+            } catch(ex) {
+                if(/No module/.test(ex) || (ex.message.indexOf('$injector:nomod') > -1)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         return {
             init: function(moduleName){
                 if(!moduleName){ throw new Error('A module name is required when initializing.'); }
+                if(!moduleExists(moduleName)){ throw new Error('Unknown module \'' + moduleName + '\'.'); }
 
                 angular.module('pretend', [moduleName, 'ngMock']);
 
-                createModule();
+                createModule(moduleName);
 
                 angular.module('pretend').run(function(Pretend){
                     pretend = Pretend;
