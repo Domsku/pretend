@@ -7,8 +7,32 @@ module.exports = function (grunt) {
     grunt.initConfig({
         clean: {
             dist: [
+                '.tmp/*',
                 'dist/*'
             ]
+        },
+
+        concat: {
+            dist: {
+                files: {
+                    '.tmp/pretend.js': [
+                        'scripts/main.js',
+                        'scripts/services/**/*.js'
+                    ]
+                }
+            }
+        },
+
+        copy: {
+            dist: {
+                src: '.tmp/pretend.js',
+                dest: 'dist/pretend.js',
+                options: {
+                    process: function (content) {
+                        return '(function(){' + content + '}())';
+                    }
+                }
+            }
         },
 
         uglify: {
@@ -16,27 +40,32 @@ module.exports = function (grunt) {
                 options: {
                     mangle: false, // Setting this true breaks the code somehow.
                     compress: true,
+                    expand: true,
+                    flatten: true,
                     banner: '/** Built on <%= grunt.template.today("isoDateTime") %> **/\n'
                 },
-                files: [{
-                    expand: true,
-                    src: ['scripts/pretend.js'],
-                    dest: 'dist',
-                    flatten: true
-                }]
+                files: {
+                    'dist/pretend-min.js': ['dist/pretend.js']
+                }
             }
         },
 
         karma: {
             unit: {
-                configFile: './karma.conf.js',
+                configFile: './karma-unit.conf.js',
+                autowatch: true,
+                singleRun: false
+            },
+            integration: {
+                configFile: './karma-integration.conf.js',
                 autowatch: true,
                 singleRun: false
             }
         }
     });
 
-    grunt.registerTask('build', ['clean', 'uglify']);
-    grunt.registerTask('test', ['karma']);
+    grunt.registerTask('build', ['clean', 'concat', 'copy', 'uglify']);
+    grunt.registerTask('unit', ['karma:unit']);
+    grunt.registerTask('integration', ['karma:integration']);
     grunt.registerTask('default', ['test']);
 };

@@ -1,5 +1,5 @@
 // Create test app.
-var myApp = angular.module('myApp', []);
+var myApp = angular.module('myApp', ['ngMock']);
 myApp.factory('myService', function(myOtherService, $q){
    return {
        test: function(){
@@ -11,6 +11,9 @@ myApp.factory('myService', function(myOtherService, $q){
            myOtherService.fooPromise().then(deferred.resolve);
 
            return deferred.promise;
+       },
+       test3: function(){
+           return myOtherService.hiddenPromise();
        }
    }
 });
@@ -23,6 +26,9 @@ myApp.factory('myOtherService', function($q){
             var deferred = $q.defer();
             deferred.resolve('bar');
             return deferred.promise;
+        },
+        hiddenPromise: function(){
+            return this.fooPromise();
         }
     }
 });
@@ -39,7 +45,7 @@ pretend.init('myApp');
         beforeEach(function () {
             module('myApp');
 
-            myOtherServiceMock = pretend.mock('myOtherService');
+            myOtherServiceMock = pretend.mock('myOtherService', { promise: ['hiddenPromise'] });
 
             module(function ($provide) {
                 $provide.value('myOtherService', myOtherServiceMock.mock);
@@ -61,13 +67,25 @@ pretend.init('myApp');
             expect(result).toBe('test');
         });
 
-        it('should return the new value when calling a normal function.', function () {
+        it('should return the new value when calling a promise function.', function () {
             var handler = jasmine.createSpy('success');
             var promise = myOtherServiceMock.returns(function(){
                 return 'promiseTest';
             }).for('fooPromise');
 
             myService.test2().then(handler);
+            promise.resolve($rootScope);
+
+            expect(handler).toHaveBeenCalledWith('promiseTest');
+        });
+
+        it('should return the new value when calling a more obscure promise function.', function () {
+            var handler = jasmine.createSpy('success');
+            var promise = myOtherServiceMock.returns(function(){
+                return 'promiseTest';
+            }).for('hiddenPromise');
+
+            myService.test3().then(handler);
             promise.resolve($rootScope);
 
             expect(handler).toHaveBeenCalledWith('promiseTest');

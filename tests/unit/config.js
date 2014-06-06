@@ -1,0 +1,1 @@
+var pretend = angular.module('pretend', ['ngMock']);
