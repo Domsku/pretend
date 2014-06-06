@@ -32,6 +32,7 @@
 	"bower.json",
 	"Gruntfile.js",
 	"package.json",
-    "karma.conf.js"
+    "karma-unit.conf.js",
+    "karma-integration.conf.js"
   ]
 }
