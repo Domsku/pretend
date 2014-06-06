@@ -10,7 +10,7 @@
     "Bas Slagter"
   ],
   "description": "Small and simple mocking 'framework' to make it easier to mock items when writing unit tests for an Angular app.",
-  "main": "./dist/pretend.js",
+  "main": "./dist/pretend-min.js",
   "moduleType": [
     "globals"
   ],
