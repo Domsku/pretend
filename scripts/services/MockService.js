@@ -1,7 +1,12 @@
 'use strict';
 
 pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootScope, $q, $injector){
-    var DEFAULT_RETURN_VALUE = undefined;
+    var DEFAULT_RETURN_VALUE = undefined,
+        TYPEMAP = {
+            'methods': 'method',
+            'promises': 'promise',
+            'properties': 'property'
+        };
 
     return {
         getMock: function(objectName, options){
@@ -125,7 +130,7 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
                 setup: function(options){
                     angular.forEach(options, function(value, key){
                         angular.forEach(value, function(propertyName){
-                            setProperty(propertyName, { type: key });
+                            setProperty(propertyName, { type: TYPEMAP[key] });
                         });
                     });
                 }
