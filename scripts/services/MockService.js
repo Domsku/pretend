@@ -99,7 +99,9 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
                 return property;
             }
 
-            initializeMock(objectName);
+            if (this.autoMock) {
+                initializeMock(objectName);
+            }
 
             var result = {
                 mock: mock,
@@ -119,7 +121,7 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
                                         property.deferred(true);
                                         if(scope) { scope.$digest(); }
                                     }
-                                }
+                                };
                             }
                         }
                     };
