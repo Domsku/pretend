@@ -15,13 +15,18 @@ function Pretend(){
     }
 
     return {
-        init: function(moduleName){
+        init: function(moduleName, options){
             if(!moduleName){ throw new Error('A module name is required when initializing.'); }
             if(!moduleExists(moduleName)){ throw new Error('Unknown module \'' + moduleName + '\'.'); }
+
+            options = angular.extend({
+                autoMock: false
+            }, options);
 
             var runner = angular.module('pretend-runner', [moduleName, 'pretend']);
             runner.run(function(MockService){
                 mockService = MockService;
+                mockService.autoMock = options.autoMock;
             });
 
             angular.bootstrap(document.createElement('div'), ['pretend-runner']);
@@ -30,7 +35,7 @@ function Pretend(){
             if(!pretend){ throw new Error('Cannot create a mock prior to initialization.'); }
             return mockService.getMock(objectName, options);
         }
-    }
+    };
 }
 
 var pretend = angular.module('pretend', []);
@@ -136,7 +141,9 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
                 return property;
             }
 
-            initializeMock(objectName);
+            if (this.autoMock) {
+                initializeMock(objectName);
+            }
 
             var result = {
                 mock: mock,
@@ -156,7 +163,7 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
                                         property.deferred(true);
                                         if(scope) { scope.$digest(); }
                                     }
-                                }
+                                };
                             }
                         }
                     };
