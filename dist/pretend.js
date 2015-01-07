@@ -54,15 +54,20 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
         getMock: function(objectName, options){
             if(!objectName) { throw new Error('The name of the object that needs to be mocked is required.'); }
 
-            var mock = {},
+            var that = this,
+                mock = {},
                 properties = {},
                 instance = null;
 
             function getInstance(objectName){
-                try{
-                    return $injector.get(objectName);
-                }catch(ex){
-                    throw new Error('Unknown provider \'' + objectName + '\'. Was everything loaded before calling init()?');
+                if (that.autoMock) {
+                    try{
+                        return $injector.get(objectName);
+                    } catch(ex){
+                        throw new Error('Unknown provider \'' + objectName + '\'. Was everything loaded before calling init()?');
+                    }
+                } else {
+                    return {};
                 }
             }
 
@@ -141,9 +146,7 @@ pretend.factory('MockService', ['$rootScope', '$q', '$injector', function($rootS
                 return property;
             }
 
-            if (this.autoMock) {
-                initializeMock(objectName);
-            }
+            initializeMock(objectName);
 
             var result = {
                 mock: mock,
